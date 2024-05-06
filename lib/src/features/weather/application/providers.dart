@@ -13,7 +13,7 @@ final currentWeatherProvider =
     FutureProvider.autoDispose<WeatherData>((ref) async {
   final city = ref.watch(cityProvider);
   final weather =
-      await ref.watch(weatherRepositoryProvider).getWeather(city: city);
+      await ref.watch(httpWeatherRepositoryProvider).getWeather(city: city);
   return WeatherData.from(weather);
 });
 
@@ -21,6 +21,6 @@ final hourlyWeatherProvider =
     FutureProvider.autoDispose<ForecastData>((ref) async {
   final city = ref.watch(cityProvider);
   final forecast =
-      await ref.watch(weatherRepositoryProvider).getForecast(city: city);
+      await ref.watch(httpWeatherRepositoryProvider).getForecast(city: city);
   return ForecastData.from(forecast);
 });

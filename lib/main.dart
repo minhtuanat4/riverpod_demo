@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:open_weather_example_flutter/common/config/app_config.dart';
+import 'package:open_weather_example_flutter/common/resource/definition.dart';
 import 'package:open_weather_example_flutter/common/user_management.dart';
 import 'package:open_weather_example_flutter/router/generate_router.dart'
     as vtcrouter;
@@ -37,7 +39,15 @@ MaterialColor appBarWhiteColor = const MaterialColor(
   },
 );
 void main() {
-  runApp(const ProviderScope(child: MyApp()));
+  const configuredApp = AppConfig(
+    appTitle: 'VTCPay',
+    vtcEPosUrl: baseEPosUrlAlpha,
+    checkBackgroundGarenaCard: 'thegarena',
+    checkBackgroundFuntapCard: 'thefuncard',
+    linkGooglePayment: true,
+    child: MyApp(),
+  );
+  runApp(const ProviderScope(child: configuredApp));
 }
 
 class MyApp extends StatelessWidget {
@@ -106,7 +116,7 @@ class CircularIndicator extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isShowLoading = ref.read(loadingProvider);
+    final isShowLoading = ref.watch(loadingProvider);
     return isShowLoading
         ? Container(
             color: Colors.black.withOpacity(0.2),

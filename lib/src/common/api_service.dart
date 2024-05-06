@@ -2,8 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:open_weather_example_flutter/common/config/app_config.dart';
+import 'package:open_weather_example_flutter/common/user_management.dart';
 import 'package:open_weather_example_flutter/src/common/loading_provider.dart';
 import 'package:open_weather_example_flutter/src/features/weather/data/api_exception.dart';
 // class ApiService {
@@ -46,17 +49,14 @@ enum RequestMethod { requestPost, requestGet }
 enum RequestFromBaseUrl { requestFromVTCPay, requestFromVTCPayFollow }
 
 /// Providers used by rest of the app
-final apiServiceProvider = Provider<ApiService>((ref) {
-  /// Use the API key passed via --dart-define,
-  /// or fallback to the one defined in api_keys.dart
-  // set key to const
-
-  return ApiService(ref);
-});
+final apiServiceProvider = Provider<ApiService>(ApiService.new);
 
 class ApiService {
   final ProviderRef<ApiService> ref;
   HttpClient httpClient = HttpClient();
+
+  final dio = Dio();
+  final String accessToken = '';
 
   ///Stream chứa thông tin avatar
   // ignore: close_sinks
@@ -64,6 +64,19 @@ class ApiService {
       StreamController<String?>.broadcast();
 
   ApiService(this.ref);
+
+  void configureDio() {
+    final bcontextMain = UserManagement().navigatorKey!.currentContext!;
+    dio.options.baseUrl = AppConfig.of(bcontextMain)!.vtcEPosUrl;
+    dio.options.headers = <String, String>{
+      'content-type': 'application/json; charset=utf-8',
+      'vtc-request-system': '6d692e7d03b39ee92d142ee8cfc80b8c',
+      'Authorization': 'Bearer $accessToken',
+    };
+    dio.options.connectTimeout = const Duration(seconds: 15);
+    dio.options.receiveTimeout = const Duration(seconds: 12);
+  }
+
   Stream<String?> get linkAvatar => linkAvatarStreamController.stream;
 
   ///Stream chứa thông tin balance
@@ -79,6 +92,70 @@ class ApiService {
   void streamChangeBalance({required int balance}) {
     if (balance >= 0) {
       balanceStreamController.add(balance);
+    }
+  }
+
+  final userManagement = UserManagement();
+
+  Future<T> postData<T>({
+    required String api,
+    required Map<String, dynamic> body,
+    required T Function(dynamic data) builder,
+  }) async {
+    ref.read(loadingProvider.notifier).state = true;
+    final _deviceName = userManagement.deviceName;
+    final _systemVersion = userManagement.systemVersion;
+    String _deviceSerial = '';
+    if (body.containsKey('AccountName') && body['AccountName'] != null) {
+      _deviceSerial = await userManagement.getSeviceSerial(body['AccountName']);
+    }
+    final _devicebrowser =
+        Platform.isIOS ? 'VTCAPP-ios;OS:ios' : 'VTCAPP-Android;OS:Android';
+    final oSName = Platform.isIOS ? 'IOS' : 'Android';
+    if (!body.containsKey('AccountName')) {
+      final loginModel = userManagement.loginInfo;
+      body['AccountName'] = loginModel?.accountName;
+      if ((loginModel?.accessToken ?? '').isNotEmpty) {
+        body['AccessToken'] = loginModel?.accessToken;
+      }
+    }
+    final deviceDetail =
+        'fingerprint:$_deviceSerial-$_deviceSerial;devicebrowser:$_devicebrowser-$_systemVersion;device:$_deviceName;devicetype:Mobile;resolution:Mobile';
+    body['BranchID'] = 1;
+    body['OSName'] = oSName;
+    body['RequestID'] = DateTime.now().millisecondsSinceEpoch.toString();
+    body['DeviceID'] = _deviceSerial;
+    body['DeviceDetail'] = deviceDetail;
+
+    body['DeviceType'] = Platform.isIOS
+        ? 3
+        : Platform.isAndroid
+            ? 4
+            : -1;
+    body['EnvironmentType'] = 2;
+    body['ClientIP'] = '192.168.1.1';
+
+    try {
+      final response = await dio.post(
+        api,
+        data: body,
+        options: Options(method: 'POST'),
+      );
+      ref.read(loadingProvider.notifier).state = false;
+      switch (response.statusCode) {
+        case 200:
+          final data = json.decode(response.data);
+          return builder(data);
+        case 401:
+          throw InvalidApiKeyException();
+        case 404:
+          throw CityNotFoundException();
+        default:
+          throw UnknownException();
+      }
+    } catch (e) {
+      ref.read(loadingProvider.notifier).state = false;
+      throw NoInternetConnectionException();
     }
   }
 
