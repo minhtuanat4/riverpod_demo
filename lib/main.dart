@@ -1,8 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:open_weather_example_flutter/common/user_management.dart';
+import 'package:open_weather_example_flutter/router/generate_router.dart'
+    as vtcrouter;
 import 'package:open_weather_example_flutter/src/common/loading_provider.dart';
-import 'package:open_weather_example_flutter/src/features/weather/presentation/weather_page.dart';
 
+MaterialColor appBarColor = const MaterialColor(
+  0xFF5472c2,
+  {
+    50: Color(0xFF5472c2),
+    100: Color(0xFF5472c2),
+    200: Color(0xFF5472c2),
+    300: Color(0xFF5472c2),
+    400: Color(0xFF5472c2),
+    500: Color(0xFF5472c2),
+    600: Color(0xFF5472c2),
+    700: Color(0xFF5472c2),
+    800: Color(0xFF5472c2),
+    900: Color(0xFF5472c2),
+  },
+);
+
+MaterialColor appBarWhiteColor = const MaterialColor(
+  0xFFFFFFFF,
+  <int, Color>{
+    50: Color(0xFFFFFFFF),
+    100: Color(0xFFFFFFFF),
+    200: Color(0xFFFFFFFF),
+    300: Color(0xFFFFFFFF),
+    400: Color(0xFFFFFFFF),
+    500: Color(0xFFFFFFFF),
+    600: Color(0xFFFFFFFF),
+    700: Color(0xFFFFFFFF),
+    800: Color(0xFFFFFFFF),
+    900: Color(0xFFFFFFFF),
+  },
+);
 void main() {
   runApp(const ProviderScope(child: MyApp()));
 }
@@ -12,6 +45,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    UserManagement().navigatorKey = GlobalKey<NavigatorState>();
     final textStyleWithShadow = TextStyle(color: Colors.white, shadows: [
       BoxShadow(
         color: Colors.black12.withOpacity(0.25),
@@ -25,6 +59,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.light,
+        primarySwatch: appBarColor,
         textTheme: TextTheme(
           displayLarge: textStyleWithShadow,
           displayMedium: textStyleWithShadow,
@@ -43,7 +78,7 @@ class MyApp extends StatelessWidget {
           child: child,
         );
       },
-      home: const WeatherPage(city: 'London'),
+      onGenerateRoute: vtcrouter.Router.generateRoute,
     );
   }
 }
@@ -71,7 +106,7 @@ class CircularIndicator extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isShowLoading = ref.watch(loadingProvider);
+    final isShowLoading = ref.read(loadingProvider);
     return isShowLoading
         ? Container(
             color: Colors.black.withOpacity(0.2),
@@ -85,7 +120,7 @@ class CircularIndicator extends ConsumerWidget {
                 ),
                 padding: const EdgeInsets.all(22),
                 child: const CircularProgressIndicator(
-                  backgroundColor: Colors.blue,
+                  backgroundColor: Colors.white,
                 ),
               ),
             ),

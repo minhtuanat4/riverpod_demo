@@ -5,8 +5,9 @@ import 'package:open_weather_example_flutter/src/features/weather/presentation/c
 import 'package:open_weather_example_flutter/src/features/weather/presentation/hourly_weather.dart';
 
 class WeatherPage extends StatelessWidget {
-  const WeatherPage({super.key, required this.city});
-  final String city;
+  const WeatherPage({
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {

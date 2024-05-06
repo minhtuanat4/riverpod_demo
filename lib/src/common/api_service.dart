@@ -89,22 +89,21 @@ class ApiService {
   }) async {
     try {
       ref.read(loadingProvider.notifier).state = true;
+
       final response = await http.Client().get(uri);
+      ref.read(loadingProvider.notifier).state = false;
       switch (response.statusCode) {
         case 200:
           final data = json.decode(response.body);
-          ref.read(loadingProvider.notifier).state = false;
           return builder(data);
         case 401:
-          ref.read(loadingProvider.notifier).state = false;
           throw InvalidApiKeyException();
         case 404:
           throw CityNotFoundException();
         default:
-          ref.read(loadingProvider.notifier).state = false;
           throw UnknownException();
       }
-    } on SocketException catch (_) {
+    } catch (e) {
       ref.read(loadingProvider.notifier).state = false;
       throw NoInternetConnectionException();
     }
