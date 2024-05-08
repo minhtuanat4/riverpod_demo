@@ -93,7 +93,7 @@ mixin EposPopup {
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: Text(
                           des,
-                          style: const TextStyle(),
+                          style: const TextStyle(color: Colors.black),
                           textAlign: TextAlign.center,
                         ),
                       ),

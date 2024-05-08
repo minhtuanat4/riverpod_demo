@@ -1,13 +1,17 @@
 import 'dart:async';
 
+import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:open_weather_example_flutter/common/base/vtc_basic_page.dart';
 import 'package:open_weather_example_flutter/common/base/vtc_stateful_page.dart';
 import 'package:open_weather_example_flutter/common/button/definition_button.dart';
+import 'package:open_weather_example_flutter/common/model/login_model.dart';
 import 'package:open_weather_example_flutter/common/popup/epos_popup.dart';
 import 'package:open_weather_example_flutter/common/resource/definition_color.dart';
 import 'package:open_weather_example_flutter/common/resource/definition_widget.dart';
+import 'package:open_weather_example_flutter/common/user_management.dart';
 import 'package:open_weather_example_flutter/src/features/login/application/providers.dart';
 
 class LoginPage extends VTCStatefulPage {
@@ -17,20 +21,29 @@ class LoginPage extends VTCStatefulPage {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends VTCStatefulPageState<LoginPage> {
+class _LoginPageState extends VTCStatefulPageState<LoginPage>
+    with VTCBasicPage, AfterLayoutMixin {
   final phoneTextController = TextEditingController();
   final passTextController = TextEditingController();
   final formKey = GlobalKey<FormState>();
+
   @override
-  Widget build(BuildContext context) {
+  void initState() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        UserManagement().ref.read(loginProvider.notifier).login();
+      }
+    });
+    super.initState();
+  }
+
+  @override
+  Widget body(BuildContext context) {
     return Stack(
       children: [
         Container(
           decoration: const BoxDecoration(
             color: Colors.blue,
-            image: DecorationImage(
-                image: AssetImage('assets/images/login/background.jpg'),
-                fit: BoxFit.cover),
           ),
         ),
         Form(
@@ -165,15 +178,15 @@ class _LoginPageState extends VTCStatefulPageState<LoginPage> {
                 const SizedBox(
                   height: 20,
                 ),
-                EposButton(
-                    onOK: () async {},
-                    title: 'ĐĂNG NHẬP',
-                    textColor: colorBlackPos,
-                    height: 42,
-                    backgroundColor: colorYellowAccent),
+                const LoginButton(),
                 const SizedBox(
                   height: 25,
                 ),
+                const LoginButtonSecond(),
+                const SizedBox(
+                  height: 25,
+                ),
+                const LoginButtonThird()
               ],
             ),
           ),
@@ -181,33 +194,92 @@ class _LoginPageState extends VTCStatefulPageState<LoginPage> {
       ],
     );
   }
+
+  @override
+  Widget? appBar(BuildContext context) {
+    return null;
+  }
+
+  @override
+  FutureOr<void> afterFirstLayout(BuildContext context) {}
 }
 
-class LoginButton extends ConsumerWidget {
+class LoginButton extends ConsumerStatefulWidget {
   const LoginButton({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-//     ref.listen(loginProvider, (previous, next) {
-//   if(next.responseCode!  > 0){
-//     showDialog(context: context, builder: (_){
-//       return Center(child: CircularProgressIndicator(),);
-//     });
-//   }else{
-//     Navigator.pop(context);
-//   }
-// });
+  ConsumerState<LoginButton> createState() => _LoginButtonState();
+}
+
+class _LoginButtonState extends ConsumerState<LoginButton> {
+  String isFirst = 'IsFirst';
+  @override
+  void initState() {
+    isFirst = 'IsSecond';
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(loginProvider, (previous, next) {
+      final res = next;
+      if (res != null) {
+        if (res.responseCode! > 0) {
+          EposPopup.show(context: context, des: 'Thành công');
+        } else {
+          EposPopup.show(context: context, des: 'Có lỗi xảy ra');
+        }
+      } else {
+        EposPopup.show(context: context, des: 'Hệ thống bận');
+      }
+    });
+    print('btn ');
+    final isTouch = ref.read(loginProvider.notifier).isTouch;
     return EposButton(
         onOK: () async {
-          // final loginRes = ref.read(loginProvider);
-          ref.read(loginProvider).whenData((value) {
-            if (value.responseCode! > 0) {
-            } else {}
-          });
+          await ref.read(loginProvider.notifier).login();
         },
-        title: 'ĐĂNG NHẬP',
+        title: 'ĐĂNG NHẬP $isTouch',
         textColor: colorBlackPos,
         height: 42,
         backgroundColor: colorYellowAccent);
+  }
+}
+
+class LoginButtonSecond extends ConsumerWidget {
+  const LoginButtonSecond({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    print('btn Second');
+    final isPressed =
+        ref.watch(loginProvider) != null ? 'IS ĐĂNG NHẬP' : 'ĐĂNG NHẬP';
+    return EposButton(
+        onOK: () async {
+          await ref.read(loginProvider.notifier).login();
+        },
+        title: isPressed,
+        textColor: colorBlackPos,
+        height: 42,
+        backgroundColor: colorYellow);
+  }
+}
+
+class LoginButtonThird extends ConsumerWidget {
+  const LoginButtonThird({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    print('btn Third');
+
+    return EposButton(
+        onOK: () async {
+          ref.read(loginProvider.notifier).update(
+              LoginModel(accessToken: 'dsadasdasdasdas', responseCode: 1));
+        },
+        title: 'Đăng nhập',
+        textColor: colorBlackPos,
+        height: 42,
+        backgroundColor: colorYellow);
   }
 }

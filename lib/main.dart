@@ -1,11 +1,17 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:hive/hive.dart';
 import 'package:open_weather_example_flutter/common/config/app_config.dart';
 import 'package:open_weather_example_flutter/common/resource/definition.dart';
 import 'package:open_weather_example_flutter/common/user_management.dart';
 import 'package:open_weather_example_flutter/router/generate_router.dart'
     as vtcrouter;
+import 'package:open_weather_example_flutter/src/common/api_service.dart';
 import 'package:open_weather_example_flutter/src/common/loading_provider.dart';
+import 'package:path_provider/path_provider.dart';
 
 MaterialColor appBarColor = const MaterialColor(
   0xFF5472c2,
@@ -38,7 +44,29 @@ MaterialColor appBarWhiteColor = const MaterialColor(
     900: Color(0xFFFFFFFF),
   },
 );
-void main() {
+
+Future<void> initOpenBoxHive() async {
+  final directory = await getApplicationDocumentsDirectory();
+  const secureStorage = FlutterSecureStorage();
+  Hive.init(directory.path);
+
+  var encryptionKey = await secureStorage.read(key: encryptionKeyHive);
+  if (encryptionKey == null) {
+    encryptionKey = base64UrlEncode(Hive.generateSecureKey());
+    await secureStorage.write(
+      key: encryptionKeyHive,
+      value: encryptionKey,
+    );
+  }
+  final decryptionKey = base64Url.decode(encryptionKey);
+
+  await Hive.openBox(nameBoxHive,
+      encryptionCipher: HiveAesCipher(decryptionKey));
+}
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initOpenBoxHive();
   const configuredApp = AppConfig(
     appTitle: 'VTCPay',
     vtcEPosUrl: baseEPosUrlAlpha,
@@ -47,15 +75,19 @@ void main() {
     linkGooglePayment: true,
     child: MyApp(),
   );
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const ProviderScope(child: configuredApp));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     UserManagement().navigatorKey = GlobalKey<NavigatorState>();
+    UserManagement().ref = ref;
+    ApiService().bcontextMain = context;
+    ApiService().configBaseUrl();
     final textStyleWithShadow = TextStyle(color: Colors.white, shadows: [
       BoxShadow(
         color: Colors.black12.withOpacity(0.25),
@@ -96,7 +128,7 @@ class MyApp extends StatelessWidget {
 class RootPage extends StatefulWidget {
   final Widget? child;
   final String oneSignalAppId;
-  const RootPage({super.key, this.child, required this.oneSignalAppId});
+  const RootPage({required this.oneSignalAppId, super.key, this.child});
 
   @override
   State<RootPage> createState() => _RootPageState();

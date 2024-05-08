@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:open_weather_example_flutter/common/resource/definition.dart';
 
 // class AppConfig {
 //   late String _appTitle;
@@ -62,10 +61,10 @@ import 'package:open_weather_example_flutter/common/resource/definition.dart';
 
 class AppConfig extends InheritedWidget {
   const AppConfig({
-    super.key,
     required super.child,
     required this.appTitle,
     required this.vtcEPosUrl,
+    super.key,
     this.checkBackgroundGarenaCard = 'theso',
     this.checkBackgroundFuntapCard = 'funtap',
     this.storeConfig = 2,

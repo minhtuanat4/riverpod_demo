@@ -16,8 +16,8 @@ class Routes {
 
   Map<String, RouteType> getRoute() {
     return {
-      '/': (_, __) => const WeatherPage(),
-      RoutePaths.loginPage: (_, __) => const LoginPage(),
+      '/': (_, __) => const LoginPage(),
+      RoutePaths.loginPage: (_, __) => const WeatherPage(),
     };
   }
 }

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:open_weather_example_flutter/common/debug/debug.dart';
@@ -164,6 +165,14 @@ class UserManagement {
   UserManagement._initialState();
 
   GlobalKey<NavigatorState>? navigatorKey;
+
+  late WidgetRef _ref;
+
+  WidgetRef get ref => _ref;
+
+  set ref(WidgetRef value) {
+    _ref = value;
+  }
 
   /// Preload data
   Future<void> preloadData() async {}
